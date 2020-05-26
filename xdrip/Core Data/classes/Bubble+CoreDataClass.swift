@@ -3,7 +3,7 @@ import CoreData
 
 public class Bubble: NSManagedObject {
     
-    /// batterylevel, not stored in coreData, will only be available after having received it from the M5Stack
+    /// batterylevel, not stored in coreData, will only be available after having received it from the Bubble
     public var batteryLevel: Int = 0
     
     /// create Bubble

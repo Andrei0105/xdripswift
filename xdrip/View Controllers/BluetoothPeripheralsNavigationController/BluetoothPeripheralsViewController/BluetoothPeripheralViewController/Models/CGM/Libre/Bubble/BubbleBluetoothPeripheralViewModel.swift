@@ -16,8 +16,11 @@ class BubbleBluetoothPeripheralViewModel {
         /// hardware version
         case hardWare = 2
         
+        /// Libre sensor type
+        case sensorType = 3
+        
         /// Sensor serial number
-        case sensorSerialNumber = 3
+        case sensorSerialNumber = 4
         
     }
     
@@ -155,6 +158,21 @@ extension BubbleBluetoothPeripheralViewModel: BluetoothPeripheralViewModel {
             }
             
             
+        case .sensorType:
+            
+            cell.accessoryType = .none
+            
+            cell.textLabel?.text = Texts_BluetoothPeripheralView.sensorType
+            
+            if let libreSensorType = bubble.blePeripheral.libreSensorType {
+                
+                cell.detailTextLabel?.text = libreSensorType.description
+                
+            } else {
+                
+                cell.detailTextLabel?.text = nil
+            }
+            
         }
 
     }
@@ -170,7 +188,7 @@ extension BubbleBluetoothPeripheralViewModel: BluetoothPeripheralViewModel {
         
         switch setting {
             
-        case .batteryLevel:
+        case .batteryLevel, .sensorType:
             return .nothing
             
         case .firmWare:
@@ -247,11 +265,23 @@ extension BubbleBluetoothPeripheralViewModel: CGMBubbleTransmitterDelegate {
     
     func received(hardware: String, from cGMBubbleTransmitter: CGMBubbleTransmitter) {
         
-        // inform also bluetoothPeripheralManager
+        // inform bluetoothPeripheralManager, bluetoothPeripheralManager will store the hardware in the bubble object
         (bluetoothPeripheralManager as? CGMBubbleTransmitterDelegate)?.received(hardware: hardware, from: cGMBubbleTransmitter)
         
         // here's the trigger to update the table
         reloadRow(row: Settings.hardWare.rawValue)
+        
+    }
+    
+    func received(libreSensorType: LibreSensorType, from cGMBubbleTransmitter: CGMBubbleTransmitter) {
+        
+        // inform bluetoothPeripheralManager, bluetoothPeripheralManager will store the libreSensorType in the bubble object
+        (bluetoothPeripheralManager as? CGMBubbleTransmitterDelegate)?.received(libreSensorType: libreSensorType, from: cGMBubbleTransmitter)
+        
+        // here's the trigger to update the table row for sensorType
+        reloadRow(row: Settings.sensorType.rawValue)
+        
+        // ideally we should also reload the row which allows to change the value of OOP web enabled, because it may have been set by the BluetoothPeripheralManager to true, but that's in the class BluetoothPeripheralViewController, tant pis. Might be confusing, user may see it as disabled but still it's enabled
         
     }
     
