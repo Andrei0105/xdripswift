@@ -100,6 +100,31 @@ public class NightScoutUploadManager:NSObject {
         
     }
     
+    public func uploadCalibration(calibration: Calibration) {
+        
+        // check if NightScout is enabled
+        guard UserDefaults.standard.nightScoutEnabled else {return}
+        
+        // check if master is enabled
+        guard UserDefaults.standard.isMaster else {return}
+        
+        // check if siteUrl and apiKey exist
+        guard let siteURL = UserDefaults.standard.nightScoutUrl, let apiKey = UserDefaults.standard.nightScoutAPIKey else {return}
+        
+        // if schedule is on, check if upload is needed according to schedule
+        if UserDefaults.standard.nightScoutUseSchedule {
+            if let schedule = UserDefaults.standard.nightScoutSchedule {
+                if !schedule.indicatesOn(forWhen: Date()) {
+                    return
+                }
+            }
+        }
+        
+        // upload calibration
+        uploadCalibrationToNightScout(siteURL: siteURL, apiKey: apiKey, calibration: calibration)
+        
+    }
+    
     // MARK: - overriden functions
     
     // when one of the observed settings get changed, possible actions to take
@@ -227,6 +252,20 @@ public class NightScoutUploadManager:NSObject {
         } else {
             trace("    no readings to upload", log: self.oslog, category: ConstantsLog.categoryNightScoutUploadManager, type: .info)
         }
+        
+    }
+    
+    /// upload latest readings to nightscout
+    /// - parameters:
+    ///     - siteURL : nightscout site url
+    ///     - apiKey : nightscout api key
+    private func uploadCalibrationToNightScout(siteURL:String, apiKey:String, calibration:Calibration) {
+        
+        let calibrationDictionaryRepresentation = calibration.dictionaryRepresentationForNightScoutUpload
+        
+        uploadData(dataToUpload: calibrationDictionaryRepresentation, traceString: "uploadBgReadingsToNightScout", siteURL: siteURL, path: nightScoutEntriesPath, apiKey: apiKey, completionHandler: {
+            
+        })
         
     }
     

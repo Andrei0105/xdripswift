@@ -497,7 +497,7 @@ final class RootViewController: UIViewController {
                 } else {
                     trace("creation active sensor failed", log: log, category: ConstantsLog.categoryRootView, type: .info)
                 }
-                
+ 
                 // save the newly created Sensor permenantly in coredata
                 coreDataManager.saveChanges()
             }
@@ -767,16 +767,18 @@ final class RootViewController: UIViewController {
             
             var latestCalibrations = calibrationsAccessor.getLatestCalibrations(howManyDays: 4, forSensor: activeSensor)
             
+            var firstCalibration, secondCalibration : Calibration?
+            
             if let calibrator = self.calibrator {
                 
                 if latestCalibrations.count == 0 {
                     // calling initialCalibration will create two calibrations, they are returned also but we don't need them
-                    _ = calibrator.initialCalibration(firstCalibrationBgValue: valueAsDoubleConvertedToMgDl, firstCalibrationTimeStamp: Date(timeInterval: -(5*60), since: Date()), secondCalibrationBgValue: valueAsDoubleConvertedToMgDl, sensor: activeSensor, lastBgReadingsWithCalculatedValue0AndForSensor: &latestReadings, deviceName: deviceName, nsManagedObjectContext: coreDataManager.mainManagedObjectContext)
+                    (firstCalibration, secondCalibration) = calibrator.initialCalibration(firstCalibrationBgValue: valueAsDoubleConvertedToMgDl, firstCalibrationTimeStamp: Date(timeInterval: -(5*60), since: Date()), secondCalibrationBgValue: valueAsDoubleConvertedToMgDl, sensor: activeSensor, lastBgReadingsWithCalculatedValue0AndForSensor: &latestReadings, deviceName: deviceName, nsManagedObjectContext: coreDataManager.mainManagedObjectContext)
                 } else {
                     // it's not the first calibration
                     if let firstCalibrationForActiveSensor = calibrationsAccessor.firstCalibrationForActiveSensor(withActivesensor: activeSensor) {
                         // calling createNewCalibration will create a new  calibration, it is returned but we don't need it
-                        _ = calibrator.createNewCalibration(bgValue: valueAsDoubleConvertedToMgDl, lastBgReading: latestReadings[0], sensor: activeSensor, lastCalibrationsForActiveSensorInLastXDays: &latestCalibrations, firstCalibration: firstCalibrationForActiveSensor, deviceName: deviceName, nsManagedObjectContext: coreDataManager.mainManagedObjectContext)
+                        firstCalibration = calibrator.createNewCalibration(bgValue: valueAsDoubleConvertedToMgDl, lastBgReading: latestReadings[0], sensor: activeSensor, lastCalibrationsForActiveSensorInLastXDays: &latestCalibrations, firstCalibration: firstCalibrationForActiveSensor, deviceName: deviceName, nsManagedObjectContext: coreDataManager.mainManagedObjectContext)
                     }
                 }
                 
@@ -785,6 +787,12 @@ final class RootViewController: UIViewController {
                 
                 // initiate upload to NightScout, if needed
                 if let nightScoutUploadManager = self.nightScoutUploadManager {
+                    if firstCalibration != nil {
+                        nightScoutUploadManager.uploadCalibration(calibration: firstCalibration!)
+                    }
+                    if secondCalibration != nil {
+                        nightScoutUploadManager.uploadCalibration(calibration: secondCalibration!)
+                    }
                     nightScoutUploadManager.upload()
                 }
                 
