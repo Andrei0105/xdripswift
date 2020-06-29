@@ -27,6 +27,9 @@ public class NightScoutUploadManager:NSObject {
     /// SensorsAccessor instance
     private let sensorsAccessor: SensorsAccessor
     
+    /// CalibrationsAccessor instance
+    private let calibrationsAccessor: CalibrationsAccessor
+    
     /// reference to coreDataManager
     private let coreDataManager: CoreDataManager
     
@@ -47,6 +50,7 @@ public class NightScoutUploadManager:NSObject {
         // init properties
         self.coreDataManager = coreDataManager
         self.bgReadingsAccessor = BgReadingsAccessor(coreDataManager: coreDataManager)
+        self.calibrationsAccessor = CalibrationsAccessor(coreDataManager: coreDataManager)
         self.messageHandler = messageHandler
         self.sensorsAccessor = SensorsAccessor(coreDataManager: coreDataManager)
         
@@ -85,6 +89,8 @@ public class NightScoutUploadManager:NSObject {
         
         // upload readings
         uploadBgReadingsToNightScout(siteURL: siteURL, apiKey: apiKey)
+        // upload calibrations
+        uploadCalibrationsToNightScout(siteURL: siteURL, apiKey: apiKey)
         
         // upload activeSensor if needed
         if UserDefaults.standard.uploadSensorStartTimeToNS, let activeSensor = sensorsAccessor.fetchActiveSensor() {
@@ -97,32 +103,6 @@ public class NightScoutUploadManager:NSObject {
 
             }
         }
-        
-    }
-    
-    public func uploadCalibration(calibration: Calibration) {
-        
-        // check if NightScout is enabled
-        guard UserDefaults.standard.nightScoutEnabled else {return}
-        
-        // check if master is enabled
-        guard UserDefaults.standard.isMaster else {return}
-        
-        // check if siteUrl and apiKey exist
-        guard let siteURL = UserDefaults.standard.nightScoutUrl, let apiKey = UserDefaults.standard.nightScoutAPIKey else {return}
-        
-        // if schedule is on, check if upload is needed according to schedule
-        if UserDefaults.standard.nightScoutUseSchedule {
-            if let schedule = UserDefaults.standard.nightScoutSchedule {
-                if !schedule.indicatesOn(forWhen: Date()) {
-                    return
-                }
-            }
-        }
-        
-        // upload calibration
-        uploadCalibrationToNightScout(siteURL: siteURL, apiKey: apiKey, calibration: calibration)
-        
     }
     
     // MARK: - overriden functions
@@ -259,13 +239,41 @@ public class NightScoutUploadManager:NSObject {
     /// - parameters:
     ///     - siteURL : nightscout site url
     ///     - apiKey : nightscout api key
-    private func uploadCalibrationToNightScout(siteURL:String, apiKey:String, calibration:Calibration) {
+    private func uploadCalibrationsToNightScout(siteURL:String, apiKey:String) {
         
-        let calibrationDictionaryRepresentation = calibration.dictionaryRepresentationForNightScoutUpload
+        trace("in uploadCalibrationsToNightScout", log: self.oslog, category: ConstantsLog.categoryNightScoutUploadManager, type: .info)
         
-        uploadData(dataToUpload: calibrationDictionaryRepresentation, traceString: "uploadBgReadingsToNightScout", siteURL: siteURL, path: nightScoutEntriesPath, apiKey: apiKey, completionHandler: {
+        let calibrations = calibrationsAccessor.getLatestCalibrations(howManyDays: ConstantsNightScout.maxDaysToUpload, forSensor: nil)
+        
+        var calibrationsToUpload: [Calibration] = []
+        if let timeStampLatestNightScoutUploadedCalibration = UserDefaults.standard.timeStampLatestNightScoutUploadedCalibration {
+            calibrationsToUpload = calibrations.filter({$0.timeStamp > timeStampLatestNightScoutUploadedCalibration })
+            print(timeStampLatestNightScoutUploadedCalibration)
+        }
+        else {
+            calibrationsToUpload = calibrations
+        }
+        
+        if calibrationsToUpload.count > 0 {
+            trace("    number of calibrations to upload : %{public}@", log: self.oslog, category: ConstantsLog.categoryNightScoutUploadManager, type: .info, calibrationsToUpload.count.description)
             
-        })
+            // map calibrations to dictionaryRepresentation
+            let calibrationsDictionaryRepresentation = calibrationsToUpload.map({$0.dictionaryRepresentationForCalRecordNightScoutUpload}) + calibrationsToUpload.map({$0.dictionaryRepresentationForMbgRecordNightScoutUpload})
+            
+            uploadData(dataToUpload: calibrationsDictionaryRepresentation, traceString: "uploadCalibrationsToNightScout", siteURL: siteURL, path: nightScoutEntriesPath, apiKey: apiKey, completionHandler: {
+                
+                // change timeStampLatestNightScoutUploadedCalibration
+                if let lastCalibration = calibrationsToUpload.first {
+                    trace("    in uploadCalibrationsToNightScout, upload succeeded, setting timeStampLatestNightScoutUploadedCalibration to %{public}@", log: self.oslog, category: ConstantsLog.categoryNightScoutUploadManager, type: .info, lastCalibration.timeStamp.description(with: .current))
+                    UserDefaults.standard.timeStampLatestNightScoutUploadedCalibration = lastCalibration.timeStamp
+                }
+                
+            })
+            
+        } else {
+            UserDefaults.standard.timeStampLatestNightScoutUploadedCalibration = nil
+            trace("    no calibrations to upload", log: self.oslog, category: ConstantsLog.categoryNightScoutUploadManager, type: .info)
+        }
         
     }
     

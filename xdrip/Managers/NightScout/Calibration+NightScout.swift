@@ -10,8 +10,8 @@ import Foundation
 
 extension Calibration {
     
-    /// dictionary representation for upload to NightScout
-    public var dictionaryRepresentationForNightScoutUpload: [String: Any] {
+    /// dictionary representation for cal record upload to NightScout
+    public var dictionaryRepresentationForCalRecordNightScoutUpload: [String: Any] {
         
         return  [
             "_id": id,
@@ -19,16 +19,31 @@ extension Calibration {
             "date": timeStamp.toMillisecondsAsInt64(),
             "dateString": timeStamp.ISOStringFromDate(),
             "type": "cal",
-            "mbg": bg,
-            "filtered": round(adjustedRawValue * 1000),
-            "unfiltered": round(rawValue * 1000),
-            "noise": 1,
             "sysTime": timeStamp.ISOStringFromDate(),
-            "slope": slope,
-            "intercept": intercept
+            // adjusted slope and intercept values for Nightscout
+            "slope": 1000 / slope,
+            "intercept": -(intercept * 1000) / slope,
+            "scale": 1
         ]
         
     }
     
+    /// dictionary representation for mbg record upload to NightScout
+    public var dictionaryRepresentationForMbgRecordNightScoutUpload: [String: Any] {
+        
+        return  [
+            // the mbg record cannot have the same Id as the cal record
+            "_id": UniqueId.createEventId(),
+            "device": deviceName ?? "",
+            "date": timeStamp.toMillisecondsAsInt64(),
+            "dateString": timeStamp.ISOStringFromDate(),
+            "type": "mbg",
+            "mbg": bg,
+            "sysTime": timeStamp.ISOStringFromDate()
+//            "filtered": round(adjustedRawValue * 1000),
+//            "unfiltered": round(rawValue * 1000)
+        ]
+        
+    }
 }
 
