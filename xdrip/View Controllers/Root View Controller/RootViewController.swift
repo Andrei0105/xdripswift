@@ -497,7 +497,7 @@ final class RootViewController: UIViewController {
                 } else {
                     trace("creation active sensor failed", log: log, category: ConstantsLog.categoryRootView, type: .info)
                 }
- 
+                
                 // save the newly created Sensor permenantly in coredata
                 coreDataManager.saveChanges()
             }
@@ -785,7 +785,7 @@ final class RootViewController: UIViewController {
                 
                 // initiate upload to NightScout, if needed
                 if let nightScoutUploadManager = self.nightScoutUploadManager {
-                   nightScoutUploadManager.upload()
+                    nightScoutUploadManager.upload()
                 }
                 
                 // initiate upload to Dexcom Share, if needed

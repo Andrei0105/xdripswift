@@ -103,6 +103,7 @@ public class NightScoutUploadManager:NSObject {
 
             }
         }
+        
     }
     
     // MARK: - overriden functions
@@ -235,7 +236,7 @@ public class NightScoutUploadManager:NSObject {
         
     }
     
-    /// upload latest readings to nightscout
+    /// upload latest calibrations to nightscout
     /// - parameters:
     ///     - siteURL : nightscout site url
     ///     - apiKey : nightscout api key

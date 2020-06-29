@@ -146,7 +146,7 @@ extension UserDefaults {
         /// timestamp lastest reading uploaded to NightScout
         case timeStampLatestNSUploadedBgReadingToNightScout = "timeStampLatestUploadedBgReading"
         
-        /// timestamp lastest calibration uploaded to NightScout
+        /// timestamp latest calibration uploaded to NightScout
         case timeStampLatestNSUploadedCalibrationToNightScout = "timeStampLatestUploadedCalibration"
         
         // Transmitter
@@ -737,7 +737,7 @@ extension UserDefaults {
         }
     }
     
-    /// timestamp lastest calibration uploaded to NightScout
+    /// timestamp latest calibration uploaded to NightScout
     var timeStampLatestNightScoutUploadedCalibration:Date? {
         get {
             return object(forKey: Key.timeStampLatestNSUploadedCalibrationToNightScout.rawValue) as? Date
