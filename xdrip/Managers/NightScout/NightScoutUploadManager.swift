@@ -243,14 +243,16 @@ public class NightScoutUploadManager:NSObject {
         
         trace("in uploadCalibrationsToNightScout", log: self.oslog, category: ConstantsLog.categoryNightScoutUploadManager, type: .info)
         
+        // get the calibrations from the last maxDaysToUpload days
         let calibrations = calibrationsAccessor.getLatestCalibrations(howManyDays: ConstantsNightScout.maxDaysToUpload, forSensor: nil)
         
         var calibrationsToUpload: [Calibration] = []
         if let timeStampLatestNightScoutUploadedCalibration = UserDefaults.standard.timeStampLatestNightScoutUploadedCalibration {
+            // select calibrations that are more recent than the latest uploaded calibration
             calibrationsToUpload = calibrations.filter({$0.timeStamp > timeStampLatestNightScoutUploadedCalibration })
-            print(timeStampLatestNightScoutUploadedCalibration)
         }
         else {
+            // or all calibrations if there is no previously uploaded calibration
             calibrationsToUpload = calibrations
         }
         
@@ -258,6 +260,7 @@ public class NightScoutUploadManager:NSObject {
             trace("    number of calibrations to upload : %{public}@", log: self.oslog, category: ConstantsLog.categoryNightScoutUploadManager, type: .info, calibrationsToUpload.count.description)
             
             // map calibrations to dictionaryRepresentation
+            // 2 records are uploaded to nightscout for each calibration: a cal record and a mbg record
             let calibrationsDictionaryRepresentation = calibrationsToUpload.map({$0.dictionaryRepresentationForCalRecordNightScoutUpload}) + calibrationsToUpload.map({$0.dictionaryRepresentationForMbgRecordNightScoutUpload})
             
             uploadData(dataToUpload: calibrationsDictionaryRepresentation, traceString: "uploadCalibrationsToNightScout", siteURL: siteURL, path: nightScoutEntriesPath, apiKey: apiKey, completionHandler: {
@@ -271,7 +274,6 @@ public class NightScoutUploadManager:NSObject {
             })
             
         } else {
-            UserDefaults.standard.timeStampLatestNightScoutUploadedCalibration = nil
             trace("    no calibrations to upload", log: self.oslog, category: ConstantsLog.categoryNightScoutUploadManager, type: .info)
         }
         

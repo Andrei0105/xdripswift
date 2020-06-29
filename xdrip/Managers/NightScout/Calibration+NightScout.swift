@@ -40,8 +40,6 @@ extension Calibration {
             "type": "mbg",
             "mbg": bg,
             "sysTime": timeStamp.ISOStringFromDate()
-//            "filtered": round(adjustedRawValue * 1000),
-//            "unfiltered": round(rawValue * 1000)
         ]
         
     }
